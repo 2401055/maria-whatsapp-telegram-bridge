@@ -2,38 +2,41 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const { spawn } = require('child_process');
 
-// 1. Start Web Server IMMEDIATELY for Railway
+// 1. Web Server
 const app = express();
 const port = process.env.PORT || 8080;
-app.get('/', (req, res) => res.send('Maria Bridge is Active'));
-app.listen(port, '0.0.0.0', () => {
-    console.log(`SERVER_LISTENING_ON_PORT_${port}`);
-});
+app.get('/', (req, res) => res.send('Maria Bridge Status: Active'));
+app.listen(port, '0.0.0.0', () => console.log(`WEB_SERVER_READY_PORT_${port}`));
 
-// 2. Initialize Telegram Bot
+// 2. Bot Config
 const tgToken = "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
 const ownerId = "8439757620";
 const tgBot = new TelegramBot(tgToken, { polling: true });
 
-console.log('TELEGRAM_BOT_INITIALIZING');
+// 3. Error Reporting to Telegram
+process.on('uncaughtException', (err) => {
+    const errorMsg = `⚠️ *CRITICAL ERROR*:\n\`\`\`\n${err.message}\n\`\`\``;
+    tgBot.sendMessage(ownerId, errorMsg, { parse_mode: 'Markdown' }).catch(() => {});
+    console.error(err);
+});
 
-// 3. Startup Alert
-tgBot.sendMessage(ownerId, "🚀 *BRIDGE SYSTEM ONLINE*\n\nRailway has successfully deployed the code. I am now starting the WhatsApp module...")
-.then(() => console.log('STARTUP_MESSAGE_SENT'))
-.catch(e => console.error('TELEGRAM_SEND_ERROR:', e.message));
+// 4. Startup
+console.log('INITIALIZING_SYSTEM');
+tgBot.sendMessage(ownerId, "🛰️ *Maria Bridge Attempting to Connect...*\nWeb server is active. Starting modules.")
+.then(() => {
+    console.log('STARTUP_SIGNAL_SENT');
+    startWhatsApp();
+})
+.catch(e => {
+    console.error('TELEGRAM_AUTH_ERROR:', e.message);
+});
 
-// 4. Start WhatsApp Module
 function startWhatsApp() {
-    console.log('STARTING_PLUGINS_JS');
-    const p = spawn('node', ['plugins.js'], {
-        stdio: 'inherit'
-    });
-
+    console.log('SPAWNING_WHATSAPP_MODULE');
+    const p = spawn('node', ['plugins.js'], { stdio: 'inherit' });
+    
     p.on('exit', (code) => {
-        console.log(`WHATSAPP_EXITED_CODE_${code}_RESTARTING`);
+        tgBot.sendMessage(ownerId, `🔄 *WhatsApp Module Restarting* (Exit Code: ${code})`).catch(() => {});
         setTimeout(startWhatsApp, 5000);
     });
 }
-
-// Small delay to ensure TG is ready
-setTimeout(startWhatsApp, 2000);
