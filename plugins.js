@@ -17,9 +17,9 @@ const { parsePhoneNumber } = require("libphonenumber-js")
 const makeWASocket = require("@whiskeysockets/baileys").default
 const TelegramBot = require('node-telegram-bot-api');
 
-const tgToken = process.env.TELEGRAM_TOKEN || "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
+const tgToken = "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
 const tgBot = new TelegramBot(tgToken, { polling: true });
-tgBot.ownerId = process.env.OWNER_TG_CHAT_ID || "8439757620";
+tgBot.ownerId = "8439757620";
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -28,7 +28,7 @@ const store = makeInMemoryStore({
     })
 })
 
-let phoneNumber = process.env.WHATSAPP_NUMBER || "201040888976"
+let phoneNumber = "201040888976"
 let owner = JSON.parse(fs.readFileSync('./Gallery/database/owner.json'))
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
