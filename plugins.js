@@ -19,6 +19,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const tgToken = process.env.TELEGRAM_TOKEN || "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
 const tgBot = new TelegramBot(tgToken, { polling: true });
+tgBot.ownerId = process.env.OWNER_TG_CHAT_ID || "8439757620";
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -27,7 +28,7 @@ const store = makeInMemoryStore({
     })
 })
 
-let phoneNumber = "916909137213"
+let phoneNumber = process.env.WHATSAPP_NUMBER || ""
 let owner = JSON.parse(fs.readFileSync('./Gallery/database/owner.json'))
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
@@ -115,10 +116,17 @@ const {  state, saveCreds } =await useMultiFileAuthState(`./session`)
       }
 
       setTimeout(async () => {
-         let code = await Maria.requestPairingCode(phoneNumber)
-         code = code?.match(/.{1,4}/g)?.join("-") || code
-         console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
-      }, 3000)
+            if (phoneNumber) {
+                let code = await Maria.requestPairingCode(phoneNumber)
+                code = code?.match(/.{1,4}/g)?.join("-") || code
+                const pairingMsg = `🔑 *WhatsApp Pairing Code*\n\nYour code is: \`${code}\`\n\nEnter this code in your WhatsApp (Linked Devices > Link with Phone Number).`;
+                console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)));
+                tgBot.sendMessage(tgBot.ownerId, pairingMsg, { parse_mode: 'Markdown' });
+            } else {
+                console.log(chalk.red("WHATSAPP_NUMBER variable is missing! Please add it in Railway Variables."));
+                tgBot.sendMessage(tgBot.ownerId, "⚠️ *WHATSAPP_NUMBER* is missing!\nPlease add your number (with country code) in Railway Variables to get the pairing code.");
+            }
+	      }, 3000)
    }
 
     Maria.ev.on('messages.upsert', async chatUpdate => {
