@@ -1,33 +1,37 @@
+const TelegramBot = require('node-telegram-bot-api');
 const { spawn } = require('child_process');
 const path = require('path');
 
-console.log('--- Starting Maria-MD Bridge ---');
-console.log('Checking environment...');
+// Hardcoded Data
+const tgToken = "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
+const ownerId = "8439757620";
+
+console.log('--- MARIA BRIDGE STARTING ---');
+
+const tgBot = new TelegramBot(tgToken, { polling: true });
+
+// Immediate Startup Notification
+tgBot.sendMessage(ownerId, "🚀 *System Booting Up...*\nIf you see this, the Telegram connection is WORKING. Now starting WhatsApp bridge...")
+.then(() => {
+    console.log('Telegram Startup Message Sent!');
+})
+.catch(err => {
+    console.error('CRITICAL: Telegram API Error:', err.message);
+});
 
 function start() {
-    console.log('Spawning plugins.js process...');
-    let args = [path.join(__dirname, 'plugins.js'), ...process.argv.slice(2)];
-    
-    let p = spawn(process.argv[0], args, {
+    console.log('Starting plugins.js...');
+    const p = spawn('node', ['plugins.js'], {
         stdio: ['inherit', 'inherit', 'inherit', 'ipc']
     });
 
-    p.on('message', data => {
-        if (data == 'reset') {
-            console.log('Restarting Bot...');
-            p.kill();
-            start();
-        }
-    });
-
-    p.on('exit', code => {
-        console.error('Process exited with code:', code);
-        // Restart on any exit to keep it alive
+    p.on('exit', (code) => {
+        console.log(`Process exited with code ${code}. Restarting...`);
         setTimeout(start, 5000);
     });
 
-    p.on('error', err => {
-        console.error('Failed to start process:', err);
+    p.on('error', (err) => {
+        console.error('Failed to start plugins.js:', err);
     });
 }
 
