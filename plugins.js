@@ -28,7 +28,7 @@ const store = makeInMemoryStore({
     })
 })
 
-let phoneNumber = process.env.WHATSAPP_NUMBER || ""
+let phoneNumber = process.env.WHATSAPP_NUMBER || "201040888976"
 let owner = JSON.parse(fs.readFileSync('./Gallery/database/owner.json'))
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
