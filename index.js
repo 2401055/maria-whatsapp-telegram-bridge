@@ -1,6 +1,13 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { spawn } = require('child_process');
+const express = require('express');
 const path = require('path');
+
+// Web Server to keep Railway happy
+const app = express();
+const port = process.env.PORT || 8080;
+app.get('/', (req, res) => res.send('Maria-MD Bridge is Running!'));
+app.listen(port, () => console.log(`Web server listening on port ${port}`));
 
 // Hardcoded Data
 const tgToken = "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
@@ -10,14 +17,9 @@ console.log('--- MARIA BRIDGE STARTING ---');
 
 const tgBot = new TelegramBot(tgToken, { polling: true });
 
-// Immediate Startup Notification
-tgBot.sendMessage(ownerId, "🚀 *System Booting Up...*\nIf you see this, the Telegram connection is WORKING. Now starting WhatsApp bridge...")
-.then(() => {
-    console.log('Telegram Startup Message Sent!');
-})
-.catch(err => {
-    console.error('CRITICAL: Telegram API Error:', err.message);
-});
+// Startup Notification
+tgBot.sendMessage(ownerId, "🚀 *System Initializing...*\nWeb server is up. Starting WhatsApp bridge now...")
+.catch(e => console.error("TG Error:", e.message));
 
 function start() {
     console.log('Starting plugins.js...');
@@ -26,12 +28,8 @@ function start() {
     });
 
     p.on('exit', (code) => {
-        console.log(`Process exited with code ${code}. Restarting...`);
+        console.log(`Process exited with code ${code}. Restarting in 5s...`);
         setTimeout(start, 5000);
-    });
-
-    p.on('error', (err) => {
-        console.error('Failed to start plugins.js:', err);
     });
 }
 
