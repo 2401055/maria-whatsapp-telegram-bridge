@@ -1,12 +1,7 @@
 FROM node:20-bullseye
 
-# Update and install dependencies with retries and fix-missing
-RUN apt-get update --fix-missing && \
-    apt-get install -y --no-install-recommends \
-    ffmpeg \
-    imagemagick \
-    webp && \
-    apt-get upgrade -y && \
+RUN apt-get update && \
+    apt-get install -y ffmpeg imagemagick webp && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,5 +10,10 @@ COPY package.json .
 RUN npm install --legacy-peer-deps
 
 COPY . .
+
+# Set environment to production
+ENV NODE_ENV=production
+
+EXPOSE 8080
 
 CMD ["node", "index.js"]
