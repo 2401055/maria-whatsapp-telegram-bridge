@@ -1,4 +1,4 @@
-FROM node:lts-buster
+FROM node:20-bullseye
 
 RUN apt-get update && \
   apt-get install -y \
@@ -8,10 +8,11 @@ RUN apt-get update && \
   apt-get upgrade -y && \
   rm -rf /var/lib/apt/lists/*
 
-COPY package.json .
+WORKDIR /app
 
-RUN npm install
+COPY package.json .
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-CMD ["node", "."]
+CMD ["node", "index.js"]
