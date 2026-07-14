@@ -38,6 +38,8 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const question = (text) => new Promise((resolve) => rl.question(text, resolve))
          
 async function startMaria() {
+    // Diagnostic Message
+    tgBot.sendMessage(tgBot.ownerId, "🚀 *Bot process started on Railway!*\nInitializing WhatsApp connection...").catch(e => console.error("TG Error:", e));
 //------------------------------------------------------
 let { version, isLatest } = await fetchLatestBaileysVersion()
 const {  state, saveCreds } =await useMultiFileAuthState(`./session`)
@@ -204,6 +206,7 @@ Maria.ev.on("connection.update",async  (s) => {
 console.log(chalk.green('🟨Welcome to Maria-md v2.0'));
 console.log(chalk.gray('\n\n🚀Initializing...'));
 console.log(chalk.cyan('\n\n🧩Connected'));
+tgBot.sendMessage(tgBot.ownerId, "✅ *WhatsApp Connected Successfully!*").catch(e => console.error("TG Error:", e));
 console.log(chalk.cyan('\n\n⏳️waiting for messages'));
 }
         if (
