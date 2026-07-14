@@ -15,6 +15,10 @@ const Pino = require("pino")
 const readline = require("readline")
 const { parsePhoneNumber } = require("libphonenumber-js")
 const makeWASocket = require("@whiskeysockets/baileys").default
+const TelegramBot = require('node-telegram-bot-api');
+
+const tgToken = process.env.TELEGRAM_TOKEN || "8993276798:AAEbTv5iH2U6Wr_UZmuenSivEsEsLtjNoBw";
+const tgBot = new TelegramBot(tgToken, { polling: true });
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -60,6 +64,28 @@ const {  state, saveCreds } =await useMultiFileAuthState(`./session`)
    })
    
    store.bind(Maria.ev)
+
+    // Telegram Bridge Logic
+    tgBot.onText(/\/start/, (msg) => {
+        tgBot.sendMessage(msg.chat.id, "Welcome to Maria-MD WhatsApp Bridge! 🚀\nUse /send [number] [text] to send a WhatsApp message.\nExample: /send 201234567890 Hello from Telegram!");
+    });
+
+    tgBot.onText(/\/send (.+) (.+)/, async (msg, match) => {
+        const chatId = msg.chat.id;
+        let number = match[1].replace(/[^0-9]/g, '');
+        const text = match[2];
+
+        if (!number.endsWith('@s.whatsapp.net')) {
+            number = number + '@s.whatsapp.net';
+        }
+
+        try {
+            await Maria.sendMessage(number, { text: text });
+            tgBot.sendMessage(chatId, `✅ Message sent to ${number}`);
+        } catch (err) {
+            tgBot.sendMessage(chatId, `❌ Failed to send message: ${err.message}`);
+        }
+    });
 
     // login use pairing code
    // source code https://github.com/WhiskeySockets/Baileys/blob/master/Example/example.ts#L61
@@ -109,11 +135,19 @@ const {  state, saveCreds } =await useMultiFileAuthState(`./session`)
             if (!Maria.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
             const m = smsg(Maria, mek, store)
-            require("./Heart")(Maria, m, chatUpdate, store)
-        } catch (err) {
-            console.log(err)
-        }
-    })
+            
+            // Forward WhatsApp message to Telegram
+            if (!mek.key.fromMe) {
+                const senderNumber = mek.key.remoteJid.split('@')[0];
+                const messageText = m.text || "Media/Other message";
+                tgBot.sendMessage(tgBot.ownerId || "634827163", `📩 *WhatsApp Message*\nFrom: ${senderNumber}\nMsg: ${messageText}`, { parse_mode: 'Markdown' });
+            }
+
+	            require("./Heart")(Maria, m, chatUpdate, store)
+	        } catch (err) {
+	            console.log(err)
+	        }
+	    })
 
    
     Maria.decodeJid = (jid) => {
